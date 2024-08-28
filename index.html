@@ -1,221 +1,318 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Tic-Tac-Toe Game</title>
+    <title>Tic-Tac-AI</title>
     <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet">
     <style>
+        body {
+            background-color: #f3f4f6;
+            color: #333;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
         .board {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 20px auto;
-            max-width: 300px;
+            gap: 15px;
+            margin: 30px auto;
+            max-width: 400px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         }
+
         .cell {
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            text-align: center;
-            font-size: 2em;
-            height: 100px;
+            background-color: #e0e0e0;
+            border-radius: 8px;
+            font-size: 3em;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            line-height: 100px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            user-select: none;
         }
-        .hidden {
-            display: none;
+
+        .cell:hover {
+            background-color: #d1d1d1;
+            transform: scale(1.05);
+        }
+
+        .winning-cell {
+            animation: winnerAnimation 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes winnerAnimation {
+            from {
+                background-color: #ffeb3b;
+            }
+
+            to {
+                background-color: #fbc02d;
+            }
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .controls button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 5px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .controls button:hover {
+            background-color: #45a049;
+        }
+
+        #status {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 600px) {
+            .cell {
+                height: 80px;
+                font-size: 2em;
+            }
+
+            .board {
+                max-width: 280px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<nav class="container-fluid">
-    <ul>
-        <li><strong>Tic-Tac-Toe</strong></li>
-    </ul>
-    <ul>
-        <li><a href="#" onclick="resetGame()">Restart</a></li>
-        <li><a href="#" onclick="undoMove()">Undo Move</a></li>
-    </ul>
-</nav>
+    <main class="container">
+        <hgroup>
+            <h2>Tic-Tac-AI</h2>
+            <h3>Player vs AI</h3>
+        </hgroup>
 
-<main class="container">
-    <hgroup>
-        <h2>Let's Play Tic-Tac-Toe!</h2>
-        <h3>Player vs AI</h3>
-    </hgroup>
+        <div id="board" class="board">
+            <!-- Cells will be dynamically created here -->
+        </div>
 
-    <div id="board" class="board">
-        <!-- Cells will be dynamically created here -->
-    </div>
+        <section aria-label="Game Status">
+            <h3 id="status">Your turn!</h3>
+            <p>Score: You - <span id="playerScore">0</span>, AI - <span id="aiScore">0</span></p>
+        </section>
 
-    <section aria-label="Game Status">
-        <h3 id="status">Your turn!</h3>
-        <p>Score: You - <span id="playerScore">0</span>, AI - <span id="aiScore">0</span></p>
-    </section>
-</main>
+        <div class="controls">
+            <button onclick="resetGame()">Restart</button>
+            <button onclick="undoMove()">Undo Move</button>
+        </div>
+    </main>
 
-<footer class="container">
-    <small><a href="#">Tic-Tac-Toe Game</a> • <a href="https://github.com">GitHub</a></small>
-</footer>
+    <footer>
+        <small><a href="#">Tic-Tac-AI Game</a> • <a href="https://github.com">GitHub</a></small>
+    </footer>
 
-<script>
-    const player = 'X';
-    const ai = 'O';
-    let board = Array(3).fill().map(() => Array(3).fill(' '));
-    let playerScore = 0;
-    let aiScore = 0;
-    let moveHistory = [];
+    <script>
+        const player = 'X';
+        const ai = 'O';
+        let board = Array(3).fill().map(() => Array(3).fill(' '));
+        let playerScore = 0;
+        let aiScore = 0;
+        let moveHistory = [];
 
-    function createBoard() {
-        const boardElement = document.getElementById('board');
-        boardElement.innerHTML = '';
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.id = `${i}-${j}`;
-                cell.addEventListener('click', () => playerMove(i, j));
-                boardElement.appendChild(cell);
+        function createBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `${i}-${j}`;
+                    cell.addEventListener('click', () => playerMove(i, j));
+                    boardElement.appendChild(cell);
+                }
             }
         }
-    }
 
-    function printBoard() {
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                document.getElementById(`${i}-${j}`).textContent = board[i][j];
+        function printBoard() {
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const cellElement = document.getElementById(`${i}-${j}`);
+                    cellElement.textContent = board[i][j];
+                    cellElement.classList.remove('winning-cell');
+                }
             }
         }
-    }
 
-    function checkWinner(b, p) {
-        const winConditions = [
-            [b[0][0], b[0][1], b[0][2]],
-            [b[1][0], b[1][1], b[1][2]],
-            [b[2][0], b[2][1], b[2][2]],
-            [b[0][0], b[1][0], b[2][0]],
-            [b[0][1], b[1][1], b[2][1]],
-            [b[0][2], b[1][2], b[2][2]],
-            [b[0][0], b[1][1], b[2][2]],
-            [b[2][0], b[1][1], b[0][2]],
-        ];
-        return winConditions.some(condition => condition.every(cell => cell === p));
-    }
+        function highlightWinningCells(cells) {
+            cells.forEach(cell => {
+                document.getElementById(`${cell[0]}-${cell[1]}`).classList.add('winning-cell');
+            });
+        }
 
-    function isBoardFull() {
-        return board.flat().every(cell => cell !== ' ');
-    }
+        function checkWinner(b, p) {
+            const winConditions = [
+                [[0, 0], [0, 1], [0, 2]],
+                [[1, 0], [1, 1], [1, 2]],
+                [[2, 0], [2, 1], [2, 2]],
+                [[0, 0], [1, 0], [2, 0]],
+                [[0, 1], [1, 1], [2, 1]],
+                [[0, 2], [1, 2], [2, 2]],
+                [[0, 0], [1, 1], [2, 2]],
+                [[2, 0], [1, 1], [0, 2]],
+            ];
+            for (const condition of winConditions) {
+                if (condition.every(([x, y]) => b[x][y] === p)) {
+                    highlightWinningCells(condition);
+                    return true;
+                }
+            }
+            return false;
+        }
 
-    function minimax(b, depth, isMaximizing) {
-        if (checkWinner(b, ai)) return 1;
-        if (checkWinner(b, player)) return -1;
-        if (isBoardFull()) return 0;
+        function isBoardFull() {
+            return board.flat().every(cell => cell !== ' ');
+        }
 
-        if (isMaximizing) {
+        function minimax(b, depth, isMaximizing) {
+            if (checkWinner(b, ai)) return 1;
+            if (checkWinner(b, player)) return -1;
+            if (isBoardFull()) return 0;
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        if (b[i][j] === ' ') {
+                            b[i][j] = ai;
+                            let score = minimax(b, depth + 1, false);
+                            b[i][j] = ' ';
+                            bestScore = Math.max(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        if (b[i][j] === ' ') {
+                            b[i][j] = player;
+                            let score = minimax(b, depth + 1, true);
+                            b[i][j] = ' ';
+                            bestScore = Math.min(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function bestMove() {
             let bestScore = -Infinity;
+            let move = null;
             for (let i = 0; i < 3; i++) {
                 for (let j = 0; j < 3; j++) {
-                    if (b[i][j] === ' ') {
-                        b[i][j] = ai;
-                        let score = minimax(b, depth + 1, false);
-                        b[i][j] = ' ';
-                        bestScore = Math.max(score, bestScore);
+                    if (board[i][j] === ' ') {
+                        board[i][j] = ai;
+                        let score = minimax(board, 0, false);
+                        board[i][j] = ' ';
+                        if (score > bestScore) {
+                            bestScore = score;
+                            move = { i, j };
+                        }
                     }
                 }
             }
-            return bestScore;
-        } else {
-            let bestScore = Infinity;
-            for (let i = 0; i < 3; i++) {
-                for (let j = 0; j < 3; j++) {
-                    if (b[i][j] === ' ') {
-                        b[i][j] = player;
-                        let score = minimax(b, depth + 1, true);
-                        b[i][j] = ' ';
-                        bestScore = Math.min(score, bestScore);
-                    }
-                }
-            }
-            return bestScore;
-        }
-    }
-
-    function bestMove() {
-        let bestScore = -Infinity;
-        let move = null;
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                if (board[i][j] === ' ') {
-                    board[i][j] = ai;
-                    let score = minimax(board, 0, false);
-                    board[i][j] = ' ';
-                    if (score > bestScore) {
-                        bestScore = score;
-                        move = {i, j};
-                    }
-                }
-            }
-        }
-        return move;
-    }
-
-    function playerMove(i, j) {
-        if (board[i][j] !== ' ') return;
-        board[i][j] = player;
-        moveHistory.push({i, j, player: player});
-        printBoard();
-        if (checkWinner(board, player)) {
-            playerScore++;
-            document.getElementById('status').textContent = 'You win!';
-            document.getElementById('playerScore').textContent = playerScore;
-            setTimeout(resetGame, 2000);
-            return;
-        }
-        if (isBoardFull()) {
-            document.getElementById('status').textContent = "It's a tie!";
-            setTimeout(resetGame, 2000);
-            return;
+            return move;
         }
 
-        aiMove();
-    }
-
-    function aiMove() {
-        const move = bestMove();
-        if (move) {
-            board[move.i][move.j] = ai;
-            moveHistory.push({i: move.i, j: move.j, player: ai});
+        function playerMove(i, j) {
+            if (board[i][j] !== ' ') return;
+            board[i][j] = player;
+            moveHistory.push({ i, j, player: player });
             printBoard();
-            if (checkWinner(board, ai)) {
-                aiScore++;
-                document.getElementById('status').textContent = 'AI wins!';
-                document.getElementById('aiScore').textContent = aiScore;
+            if (checkWinner(board, player)) {
+                playerScore++;
+                document.getElementById('status').textContent = 'You win!';
+                document.getElementById('playerScore').textContent = playerScore;
                 setTimeout(resetGame, 2000);
                 return;
             }
             if (isBoardFull()) {
                 document.getElementById('status').textContent = "It's a tie!";
                 setTimeout(resetGame, 2000);
+                return;
+            }
+
+            aiMove();
+        }
+
+        function aiMove() {
+            const move = bestMove();
+            if (move) {
+                board[move.i][move.j] = ai;
+                moveHistory.push({ i: move.i, j: move.j, player: ai });
+                printBoard();
+                if (checkWinner(board, ai)) {
+                    aiScore++;
+                    document.getElementById('status').textContent = 'AI wins!';
+                    document.getElementById('aiScore').textContent = aiScore;
+                    setTimeout(resetGame, 2000);
+                    return;
+                }
+                if (isBoardFull()) {
+                    document.getElementById('status').textContent = "It's a tie!";
+                    setTimeout(resetGame, 2000);
+                }
             }
         }
-    }
 
-    function resetGame() {
-        board = Array(3).fill().map(() => Array(3).fill(' '));
-        moveHistory = [];
-        document.getElementById('status').textContent = 'Your turn!';
-        printBoard();
-    }
-
-    function undoMove() {
-        if (moveHistory.length > 0) {
-            const lastMove = moveHistory.pop();
-            board[lastMove.i][lastMove.j] = ' ';
-            printBoard();
+        function resetGame() {
+            board = Array(3).fill().map(() => Array(3).fill(' '));
+            moveHistory = [];
             document.getElementById('status').textContent = 'Your turn!';
+            printBoard();
         }
-    }
+
+        function undoMove() {
+            if (moveHistory.length > 0) {
+                const lastMove = moveHistory.pop();
+                board[lastMove.i][lastMove.j] = ' ';
+                printBoard();
+                document.getElementById('status').textContent = 'Your turn!';
+            }
+        }
+
+        createBoard();
+        printBoard();
+    </script>
+
+</body>
+
+</html>
 
     createBoard();
     printBoard();
