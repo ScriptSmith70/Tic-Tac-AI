@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tic-Tac-Toe Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet">
+    <style>
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px auto;
+            max-width: 300px;
+        }
+        .cell {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            text-align: center;
+            font-size: 2em;
+            height: 100px;
+            cursor: pointer;
+            line-height: 100px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="container-fluid">
+    <ul>
+        <li><strong>Tic-Tac-Toe</strong></li>
+    </ul>
+    <ul>
+        <li><a href="#" onclick="resetGame()">Restart</a></li>
+        <li><a href="#" onclick="undoMove()">Undo Move</a></li>
+    </ul>
+</nav>
+
+<main class="container">
+    <hgroup>
+        <h2>Let's Play Tic-Tac-Toe!</h2>
+        <h3>Player vs AI</h3>
+    </hgroup>
+
+    <div id="board" class="board">
+        <!-- Cells will be dynamically created here -->
+    </div>
+
+    <section aria-label="Game Status">
+        <h3 id="status">Your turn!</h3>
+        <p>Score: You - <span id="playerScore">0</span>, AI - <span id="aiScore">0</span></p>
+    </section>
+</main>
+
+<footer class="container">
+    <small><a href="#">Tic-Tac-Toe Game</a> • <a href="https://github.com">GitHub</a></small>
+</footer>
+
+<script>
+    const player = 'X';
+    const ai = 'O';
+    let board = Array(3).fill().map(() => Array(3).fill(' '));
+    let playerScore = 0;
+    let aiScore = 0;
+    let moveHistory = [];
+
+    function createBoard() {
+        const boardElement = document.getElementById('board');
+        boardElement.innerHTML = '';
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `${i}-${j}`;
+                cell.addEventListener('click', () => playerMove(i, j));
+                boardElement.appendChild(cell);
+            }
+        }
+    }
+
+    function printBoard() {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                document.getElementById(`${i}-${j}`).textContent = board[i][j];
+            }
+        }
+    }
+
+    function checkWinner(b, p) {
+        const winConditions = [
+            [b[0][0], b[0][1], b[0][2]],
+            [b[1][0], b[1][1], b[1][2]],
+            [b[2][0], b[2][1], b[2][2]],
+            [b[0][0], b[1][0], b[2][0]],
+            [b[0][1], b[1][1], b[2][1]],
+            [b[0][2], b[1][2], b[2][2]],
+            [b[0][0], b[1][1], b[2][2]],
+            [b[2][0], b[1][1], b[0][2]],
+        ];
+        return winConditions.some(condition => condition.every(cell => cell === p));
+    }
+
+    function isBoardFull() {
+        return board.flat().every(cell => cell !== ' ');
+    }
+
+    function minimax(b, depth, isMaximizing) {
+        if (checkWinner(b, ai)) return 1;
+        if (checkWinner(b, player)) return -1;
+        if (isBoardFull()) return 0;
+
+        if (isMaximizing) {
+            let bestScore = -Infinity;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (b[i][j] === ' ') {
+                        b[i][j] = ai;
+                        let score = minimax(b, depth + 1, false);
+                        b[i][j] = ' ';
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+            }
+            return bestScore;
+        } else {
+            let bestScore = Infinity;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (b[i][j] === ' ') {
+                        b[i][j] = player;
+                        let score = minimax(b, depth + 1, true);
+                        b[i][j] = ' ';
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+            }
+            return bestScore;
+        }
+    }
+
+    function bestMove() {
+        let bestScore = -Infinity;
+        let move = null;
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                if (board[i][j] === ' ') {
+                    board[i][j] = ai;
+                    let score = minimax(board, 0, false);
+                    board[i][j] = ' ';
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = {i, j};
+                    }
+                }
+            }
+        }
+        return move;
+    }
+
+    function playerMove(i, j) {
+        if (board[i][j] !== ' ') return;
+        board[i][j] = player;
+        moveHistory.push({i, j, player: player});
+        printBoard();
+        if (checkWinner(board, player)) {
+            playerScore++;
+            document.getElementById('status').textContent = 'You win!';
+            document.getElementById('playerScore').textContent = playerScore;
+            setTimeout(resetGame, 2000);
+            return;
+        }
+        if (isBoardFull()) {
+            document.getElementById('status').textContent = "It's a tie!";
+            setTimeout(resetGame, 2000);
+            return;
+        }
+
+        aiMove();
+    }
+
+    function aiMove() {
+        const move = bestMove();
+        if (move) {
+            board[move.i][move.j] = ai;
+            moveHistory.push({i: move.i, j: move.j, player: ai});
+            printBoard();
+            if (checkWinner(board, ai)) {
+                aiScore++;
+                document.getElementById('status').textContent = 'AI wins!';
+                document.getElementById('aiScore').textContent = aiScore;
+                setTimeout(resetGame, 2000);
+                return;
+            }
+            if (isBoardFull()) {
+                document.getElementById('status').textContent = "It's a tie!";
+                setTimeout(resetGame, 2000);
+            }
+        }
+    }
+
+    function resetGame() {
+        board = Array(3).fill().map(() => Array(3).fill(' '));
+        moveHistory = [];
+        document.getElementById('status').textContent = 'Your turn!';
+        printBoard();
+    }
+
+    function undoMove() {
+        if (moveHistory.length > 0) {
+            const lastMove = moveHistory.pop();
+            board[lastMove.i][lastMove.j] = ' ';
+            printBoard();
+            document.getElementById('status').textContent = 'Your turn!';
+        }
+    }
+
+    createBoard();
+    printBoard();
+</script>
+
+</body>
+</html>
