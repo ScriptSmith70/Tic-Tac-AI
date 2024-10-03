@@ -8,67 +8,37 @@
     <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f3f4f6;
-            color: #333;
+            background-color: #f9f9f9;
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
+            color: #333;
         }
 
         .board {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin: 30px auto;
+            gap: 10px;
+            margin: 20px auto;
             max-width: 400px;
-            padding: 10px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         .cell {
-            background-color: #e0e0e0;
+            background-color: #f0f0f0;
             border-radius: 8px;
-            font-size: 3em;
-            height: 120px;
+            font-size: 2em;
+            height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.5s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
             user-select: none;
         }
 
-        .cell.animate-move {
-            opacity: 0;
-            animation: fadeIn 0.5s forwards;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        .cell:hover {
+            background-color: #e0e0e0;
         }
 
         .winning-cell {
-            animation: winnerAnimation 1s ease-in-out infinite alternate;
-        }
-
-        @keyframes winnerAnimation {
-            from {
-                background-color: #ffeb3b;
-            }
-
-            to {
-                background-color: #fbc02d;
-            }
+            background-color: #a4e5ff;
         }
 
         .controls {
@@ -76,21 +46,26 @@
             margin-top: 20px;
         }
 
-        .controls button,
-        .controls select {
+        .controls select,
+        .controls button {
             margin: 5px;
-            padding: 10px 20px;
+            padding: 8px 15px;
             font-size: 1em;
             border-radius: 5px;
             border: none;
-            background-color: #4CAF50;
+            background-color: #007bff;
             color: white;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+        }
+
+        .controls select {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ccc;
         }
 
         .controls button:hover {
-            background-color: #45a049;
+            background-color: #0056b3;
         }
 
         #status {
@@ -102,20 +77,9 @@
 
         footer {
             text-align: center;
-            margin-top: 50px;
+            margin-top: 40px;
             color: #666;
             font-size: 0.9em;
-        }
-
-        @media (max-width: 600px) {
-            .cell {
-                height: 80px;
-                font-size: 2em;
-            }
-
-            .board {
-                max-width: 280px;
-            }
         }
     </style>
 </head>
@@ -195,10 +159,7 @@
                 for (let j = 0; j < boardSize; j++) {
                     const cellElement = document.getElementById(`${i}-${j}`);
                     cellElement.textContent = board[i][j];
-                    cellElement.classList.remove('winning-cell', 'animate-move');
-                    if (board[i][j] !== ' ') {
-                        cellElement.classList.add('animate-move');
-                    }
+                    cellElement.classList.remove('winning-cell');
                 }
             }
         }
@@ -227,13 +188,96 @@
             return false;
         }
 
+        function highlightWinningCells(cells) {
+            cells.forEach(cell => {
+                document.getElementById(`${cell[0]}-${cell[1]}`).classList.add('winning-cell');
+            });
+        }
+
+        function isBoardFull() {
+            return board.flat().every(cell => cell !== ' ');
+        }
+
+        function minimax(b, depth, isMaximizing) {
+            if (checkWinner(b, ai)) return 1;
+            if (checkWinner(b, player)) return -1;
+            if (isBoardFull()) return 0;
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < b.length; i++) {
+                    for (let j = 0; j < b.length; j++) {
+                        if (b[i][j] === ' ') {
+                            b[i][j] = ai;
+                            let score = minimax(b, depth + 1, false);
+                            b[i][j] = ' ';
+                            bestScore = Math.max(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < b.length; i++) {
+                    for (let j = 0; j < b.length; j++) {
+                        if (b[i][j] === ' ') {
+                            b[i][j] = player;
+                            let score = minimax(b, depth + 1, true);
+                            b[i][j] = ' ';
+                            bestScore = Math.min(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function bestMove() {
+            let bestScore = -Infinity;
+            let move = null;
+            for (let i = 0; i < board.length; i++) {
+                for (let j = 0; j < board.length; j++) {
+                    if (board[i][j] === ' ') {
+                        board[i][j] = ai;
+                        let score = minimax(board, 0, false);
+                        board[i][j] = ' ';
+                        if (score > bestScore) {
+                            bestScore = score;
+                            move = { i, j };
+                        }
+                    }
+                }
+            }
+            return move;
+        }
+
+        function playerMove(i, j) {
+            if (board[i][j] !== ' ') return;
+            board[i][j] = player;
+            printBoard();
+            if (checkWinner(board, player)) {
+                playerScore++;
+                document.getElementById('status').textContent = 'You win!';
+                document.getElementById('playerScore').textContent = playerScore;
+                setTimeout(resetGame, 2000);
+                return;
+            }
+            if (isBoardFull()) {
+                document.getElementById('status').textContent = "It's a tie!";
+                setTimeout(resetGame, 2000);
+                return;
+            }
+
+            aiMove();
+        }
+
         function aiMove() {
             const difficulty = document.getElementById('difficulty').value;
             let move;
             if (difficulty === 'hard') {
                 move = bestMove();
             } else if (difficulty === 'medium') {
-                move = mediumDifficultyMove();
+                move = randomMove();
             }
 
             if (move) {
@@ -253,25 +297,23 @@
             }
         }
 
-        function mediumDifficultyMove() {
+        function randomMove() {
             const emptyCells = [];
-            for (let i = 0; i < getBoardSize(); i++) {
-                for (let j = 0; j < getBoardSize(); j++) {
+            for (let i = 0; i < board.length; i++) {
+                for (let j = 0; j < board.length; j++) {
                     if (board[i][j] === ' ') {
                         emptyCells.push({ i, j });
                     }
                 }
             }
-            // 70% chance to use random move, 30% to use best move
-            if (Math.random() > 0.3) {
-                const randomMove = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                return randomMove;
-            } else {
-                return bestMove();
-            }
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
         }
 
-        // Other functions remain the same (resetGame, bestMove, minimax, etc.)
+        function resetGame() {
+            createBoard();
+            printBoard();
+            document.getElementById('status').textContent = 'Your turn!';
+        }
 
         createBoard();
         printBoard();
