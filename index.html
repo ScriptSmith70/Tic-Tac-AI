@@ -240,17 +240,24 @@
             return board.flat().every(cell => cell !== ' ');
         }
 
-        // Limiting minimax depth to avoid freezing for larger boards
-        const MAX_DEPTH = 3;
+        // Dynamic minimax depth limit based on board size
+        function getMaxDepth() {
+            const boardSize = getBoardSize();
+            if (boardSize === 3) return Infinity; // No depth limit for 3x3
+            if (boardSize === 4) return 6; // Depth limit for 4x4
+            if (boardSize === 5) return 4; // Depth limit for 5x5
+        }
 
         function minimax(b, depth, isMaximizing) {
             const boardSize = getBoardSize();
+            const maxDepth = getMaxDepth(); // Get dynamic max depth
+
             if (checkWinner(b, ai)) return 1;
             if (checkWinner(b, player)) return -1;
             if (isBoardFull()) return 0;
 
             // Limit depth to avoid performance issues on larger boards
-            if (depth >= MAX_DEPTH) {
+            if (depth >= maxDepth) {
                 return 0; // Assume a neutral result if depth is exceeded
             }
 
@@ -364,6 +371,9 @@
     </script>
 
 </body>
+
+</html>
+
 
 </html>
 
