@@ -44,6 +44,19 @@
             user-select: none;
         }
 
+        .dark-mode .cell {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .dark-mode .cell[data-player="X"] {
+            color: #ff5252;
+        }
+
+        .dark-mode .cell[data-player="O"] {
+            color: #3ddc97;
+        }
+
         .cell:hover {
             background-color: #e0e0e0;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
@@ -198,6 +211,7 @@
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     cell.id = `${i}-${j}`;
+                    cell.dataset.player = '';
                     cell.addEventListener('click', () => playerMove(i, j));
                     boardElement.appendChild(cell);
                 }
@@ -211,6 +225,7 @@
                     const cellElement = document.getElementById(`${i}-${j}`);
                     cellElement.textContent = board[i][j];
                     cellElement.classList.remove('winning-cell');
+                    cellElement.dataset.player = board[i][j]; // Track whether it's "X" or "O"
                 }
             }
         }
@@ -273,7 +288,17 @@
 
         function aiMove() {
             if (gameOver) return; // Prevent AI move after game over
-            let move = bestMove(); // Minimax for 3x3, simple AI for 4x4 and 5x5
+
+            const boardSize = getBoardSize();
+            let move;
+
+            // Use minimax only for 3x3, simple strategy for 4x4 and 5x5
+            if (boardSize === 3) {
+                move = bestMove();
+            } else {
+                move = simpleAIStrategy(); // Simple AI strategy for larger boards
+            }
+
             if (move) {
                 board[move.i][move.j] = ai;
                 printBoard();
@@ -291,6 +316,47 @@
                     setTimeout(resetGame, 2000);
                 }
             }
+        }
+
+        // Simple AI strategy for 4x4 and 5x5
+        function simpleAIStrategy() {
+            const boardSize = getBoardSize();
+
+            // Check for AI's winning move
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (board[i][j] === ' ') {
+                        board[i][j] = ai;
+                        if (checkWinner(board, ai)) return { i, j };
+                        board[i][j] = ' ';
+                    }
+                }
+            }
+
+            // Block the player's winning move
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (board[i][j] === ' ') {
+                        board[i][j] = player;
+                        if (checkWinner(board, player)) {
+                            board[i][j] = ' ';
+                            return { i, j }; // Block
+                        }
+                        board[i][j] = ' ';
+                    }
+                }
+            }
+
+            // Random move if no immediate win or block
+            let emptyCells = [];
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (board[i][j] === ' ') {
+                        emptyCells.push({ i, j });
+                    }
+                }
+            }
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
         }
 
         function bestMove() {
@@ -367,6 +433,7 @@
 </body>
 
 </html>
+
 
 
 
