@@ -25,82 +25,75 @@
 
         .board {
             display: grid;
-            gap: 10px;
+            gap: 8px;
             margin: 20px auto;
-            max-width: 400px;
+            max-width: 350px;
         }
 
         .cell {
             background-color: #f0f0f0;
             border-radius: 8px;
             font-size: 2em;
-            height: 100px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s;
+            transition: background-color 0.3s ease, transform 0.2s ease;
             user-select: none;
-            animation: fadeIn 0.5s ease-in-out;
         }
 
         .cell:hover {
             background-color: #d1d1d1;
-            transform: scale(1.05);
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .winning-cell {
-            animation: pulse 1s ease-in-out infinite alternate;
+            animation: pulse 0.6s ease-in-out infinite alternate;
         }
 
         .controls {
             display: flex;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .controls label,
         .controls select,
         .controls button {
             margin: 5px;
-            padding: 10px 20px;
-            font-size: 1em;
+            padding: 5px 10px;
+            font-size: 0.9em;
             border-radius: 5px;
             border: none;
-            transition: transform 0.2s, background-color 0.3s;
         }
 
-        .controls select {
+        .controls select,
+        .controls button {
+            width: auto;
             background-color: #f0f0f0;
             color: #333;
             border: 1px solid #ccc;
-        }
-
-        .controls button {
-            background-color: #007bff;
-            color: white;
             cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.3s;
         }
 
+        .controls select:hover,
         .controls button:hover {
-            background-color: #0056b3;
-            transform: scale(1.05);
+            background-color: #ccc;
         }
 
         #status {
             text-align: center;
-            font-size: 1.4em;
-            margin: 20px 0;
+            font-size: 1.2em;
+            margin: 15px 0;
             font-weight: bold;
-            color: #333;
         }
 
         footer {
             text-align: center;
             margin-top: 40px;
             color: #666;
-            font-size: 0.9em;
+            font-size: 0.8em;
         }
 
         .dark-mode footer {
@@ -124,22 +117,9 @@
         @keyframes pulse {
             0% {
                 background-color: #ffeb3b;
-                transform: scale(1);
             }
             100% {
                 background-color: #fbc02d;
-                transform: scale(1.1);
-            }
-        }
-
-        @keyframes fadeIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
             }
         }
     </style>
@@ -154,7 +134,7 @@
         </hgroup>
 
         <!-- Dark Mode Toggle -->
-        <div style="text-align: center; margin-bottom: 20px;">
+        <div style="text-align: center; margin-bottom: 10px;">
             <label for="darkModeToggle">Dark Mode:</label>
             <input type="checkbox" id="darkModeToggle" onclick="toggleDarkMode()">
         </div>
@@ -382,8 +362,6 @@
 
 </html>
 
-
-</html>
 
 
 
