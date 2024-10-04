@@ -31,20 +31,26 @@
         }
 
         .cell {
-            background-color: #f0f0f0;
-            border-radius: 8px;
+            background-color: #fefefe;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             font-size: 2em;
             height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
             user-select: none;
         }
 
         .cell:hover {
-            background-color: #d1d1d1;
+            background-color: #e0e0e0;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell:active {
+            transform: scale(0.95);
         }
 
         .winning-cell {
