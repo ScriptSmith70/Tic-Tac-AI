@@ -39,21 +39,19 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s;
             user-select: none;
-        }
-
-        .dark-mode .cell {
-            background-color: #333;
-            color: white;
+            animation: fadeIn 0.5s ease-in-out;
         }
 
         .cell:hover {
-            background-color: #e0e0e0;
+            background-color: #d1d1d1;
+            transform: scale(1.05);
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .winning-cell {
-            background-color: #a4e5ff;
+            animation: pulse 1s ease-in-out infinite alternate;
         }
 
         .controls {
@@ -66,10 +64,11 @@
         .controls select,
         .controls button {
             margin: 5px;
-            padding: 8px 15px;
+            padding: 10px 20px;
             font-size: 1em;
             border-radius: 5px;
             border: none;
+            transition: transform 0.2s, background-color 0.3s;
         }
 
         .controls select {
@@ -86,13 +85,15 @@
 
         .controls button:hover {
             background-color: #0056b3;
+            transform: scale(1.05);
         }
 
         #status {
             text-align: center;
-            font-size: 1.2em;
+            font-size: 1.4em;
             margin: 20px 0;
             font-weight: bold;
+            color: #333;
         }
 
         footer {
@@ -119,13 +120,35 @@
         .dark-mode label {
             color: #ddd;
         }
+
+        @keyframes pulse {
+            0% {
+                background-color: #ffeb3b;
+                transform: scale(1);
+            }
+            100% {
+                background-color: #fbc02d;
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 
 <body>
 
     <main class="container">
-        <hgroup>
+        <hgroup style="text-align: center;">
             <h2>Tic-Tac-AI</h2>
             <h3>Player vs AI</h3>
         </hgroup>
@@ -240,61 +263,31 @@
             return board.flat().every(cell => cell !== ' ');
         }
 
-        // Simple AI strategy for larger grids (4x4 and 5x5)
-        function simpleAIStrategy() {
-            const boardSize = getBoardSize();
-
-            // Check for AI's winning move
-            for (let i = 0; i < boardSize; i++) {
-                for (let j = 0; j < boardSize; j++) {
-                    if (board[i][j] === ' ') {
-                        board[i][j] = ai;
-                        if (checkWinner(board, ai)) return { i, j };
-                        board[i][j] = ' ';
-                    }
-                }
+        function playerMove(i, j) {
+            if (board[i][j] !== ' ' || gameOver) return; // Prevent move after game over
+            board[i][j] = player;
+            printBoard();
+            if (checkWinner(board, player)) {
+                playerScore++;
+                document.getElementById('status').textContent = 'You win!';
+                document.getElementById('playerScore').textContent = playerScore;
+                gameOver = true; // Mark the game as over
+                setTimeout(resetGame, 2000);
+                return;
+            }
+            if (isBoardFull()) {
+                document.getElementById('status').textContent = "It's a tie!";
+                gameOver = true;
+                setTimeout(resetGame, 2000);
+                return;
             }
 
-            // Block the player's winning move
-            for (let i = 0; i < boardSize; i++) {
-                for (let j = 0; j < boardSize; j++) {
-                    if (board[i][j] === ' ') {
-                        board[i][j] = player;
-                        if (checkWinner(board, player)) {
-                            board[i][j] = ' ';
-                            return { i, j }; // Block
-                        }
-                        board[i][j] = ' ';
-                    }
-                }
-            }
-
-            // Random move if no immediate win or block
-            let emptyCells = [];
-            for (let i = 0; i < boardSize; i++) {
-                for (let j = 0; j < boardSize; j++) {
-                    if (board[i][j] === ' ') {
-                        emptyCells.push({ i, j });
-                    }
-                }
-            }
-            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            aiMove();
         }
 
-        // AI move handler
         function aiMove() {
             if (gameOver) return; // Prevent AI move after game over
-
-            const boardSize = getBoardSize();
-            let move;
-
-            // Use minimax only for 3x3, simple strategy for larger boards
-            if (boardSize === 3) {
-                move = bestMove(); // Minimax for 3x3
-            } else {
-                move = simpleAIStrategy(); // Simple AI for 4x4 and 5x5
-            }
-
+            let move = bestMove(); // Minimax for 3x3, simple AI for 4x4 and 5x5
             if (move) {
                 board[move.i][move.j] = ai;
                 printBoard();
@@ -369,28 +362,6 @@
             }
         }
 
-        function playerMove(i, j) {
-            if (board[i][j] !== ' ' || gameOver) return; // Prevent move after game over
-            board[i][j] = player;
-            printBoard();
-            if (checkWinner(board, player)) {
-                playerScore++;
-                document.getElementById('status').textContent = 'You win!';
-                document.getElementById('playerScore').textContent = playerScore;
-                gameOver = true; // Mark the game as over
-                setTimeout(resetGame, 2000);
-                return;
-            }
-            if (isBoardFull()) {
-                document.getElementById('status').textContent = "It's a tie!";
-                gameOver = true;
-                setTimeout(resetGame, 2000);
-                return;
-            }
-
-            aiMove();
-        }
-
         function resetGame() {
             createBoard();
             printBoard();
@@ -408,6 +379,9 @@
     </script>
 
 </body>
+
+</html>
+
 
 </html>
 
