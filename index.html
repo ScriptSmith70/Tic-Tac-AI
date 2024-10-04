@@ -240,26 +240,12 @@
             return board.flat().every(cell => cell !== ' ');
         }
 
-        // Dynamic minimax depth limit based on board size
-        function getMaxDepth() {
+        // Alpha-beta pruning for optimization
+        function minimax(b, depth, isMaximizing, alpha, beta) {
             const boardSize = getBoardSize();
-            if (boardSize === 3) return Infinity; // No depth limit for 3x3
-            if (boardSize === 4) return 6; // Depth limit for 4x4
-            if (boardSize === 5) return 4; // Depth limit for 5x5
-        }
-
-        function minimax(b, depth, isMaximizing) {
-            const boardSize = getBoardSize();
-            const maxDepth = getMaxDepth(); // Get dynamic max depth
-
             if (checkWinner(b, ai)) return 1;
             if (checkWinner(b, player)) return -1;
             if (isBoardFull()) return 0;
-
-            // Limit depth to avoid performance issues on larger boards
-            if (depth >= maxDepth) {
-                return 0; // Assume a neutral result if depth is exceeded
-            }
 
             if (isMaximizing) {
                 let bestScore = -Infinity;
@@ -267,9 +253,11 @@
                     for (let j = 0; j < boardSize; j++) {
                         if (b[i][j] === ' ') {
                             b[i][j] = ai;
-                            let score = minimax(b, depth + 1, false);
+                            let score = minimax(b, depth + 1, false, alpha, beta);
                             b[i][j] = ' ';
                             bestScore = Math.max(score, bestScore);
+                            alpha = Math.max(alpha, score);
+                            if (beta <= alpha) break; // Pruning
                         }
                     }
                 }
@@ -280,9 +268,11 @@
                     for (let j = 0; j < boardSize; j++) {
                         if (b[i][j] === ' ') {
                             b[i][j] = player;
-                            let score = minimax(b, depth + 1, true);
+                            let score = minimax(b, depth + 1, true, alpha, beta);
                             b[i][j] = ' ';
                             bestScore = Math.min(score, bestScore);
+                            beta = Math.min(beta, score);
+                            if (beta <= alpha) break; // Pruning
                         }
                     }
                 }
@@ -298,7 +288,7 @@
                 for (let j = 0; j < boardSize; j++) {
                     if (board[i][j] === ' ') {
                         board[i][j] = ai;
-                        let score = minimax(board, 0, false);
+                        let score = minimax(board, 0, false, -Infinity, Infinity); // Alpha-Beta Pruning
                         board[i][j] = ' ';
                         if (score > bestScore) {
                             bestScore = score;
@@ -374,8 +364,6 @@
 
 </html>
 
-
-</html>
 
 
 
