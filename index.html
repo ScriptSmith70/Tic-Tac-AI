@@ -240,43 +240,77 @@
             return board.flat().every(cell => cell !== ' ');
         }
 
-        // Alpha-beta pruning for optimization
-        function minimax(b, depth, isMaximizing, alpha, beta) {
+        // Simple AI strategy for larger grids (4x4 and 5x5)
+        function simpleAIStrategy() {
             const boardSize = getBoardSize();
-            if (checkWinner(b, ai)) return 1;
-            if (checkWinner(b, player)) return -1;
-            if (isBoardFull()) return 0;
 
-            if (isMaximizing) {
-                let bestScore = -Infinity;
-                for (let i = 0; i < boardSize; i++) {
-                    for (let j = 0; j < boardSize; j++) {
-                        if (b[i][j] === ' ') {
-                            b[i][j] = ai;
-                            let score = minimax(b, depth + 1, false, alpha, beta);
-                            b[i][j] = ' ';
-                            bestScore = Math.max(score, bestScore);
-                            alpha = Math.max(alpha, score);
-                            if (beta <= alpha) break; // Pruning
-                        }
+            // Check for AI's winning move
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (board[i][j] === ' ') {
+                        board[i][j] = ai;
+                        if (checkWinner(board, ai)) return { i, j };
+                        board[i][j] = ' ';
                     }
                 }
-                return bestScore;
+            }
+
+            // Block the player's winning move
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (board[i][j] === ' ') {
+                        board[i][j] = player;
+                        if (checkWinner(board, player)) {
+                            board[i][j] = ' ';
+                            return { i, j }; // Block
+                        }
+                        board[i][j] = ' ';
+                    }
+                }
+            }
+
+            // Random move if no immediate win or block
+            let emptyCells = [];
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (board[i][j] === ' ') {
+                        emptyCells.push({ i, j });
+                    }
+                }
+            }
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        }
+
+        // AI move handler
+        function aiMove() {
+            if (gameOver) return; // Prevent AI move after game over
+
+            const boardSize = getBoardSize();
+            let move;
+
+            // Use minimax only for 3x3, simple strategy for larger boards
+            if (boardSize === 3) {
+                move = bestMove(); // Minimax for 3x3
             } else {
-                let bestScore = Infinity;
-                for (let i = 0; i < boardSize; i++) {
-                    for (let j = 0; j < boardSize; j++) {
-                        if (b[i][j] === ' ') {
-                            b[i][j] = player;
-                            let score = minimax(b, depth + 1, true, alpha, beta);
-                            b[i][j] = ' ';
-                            bestScore = Math.min(score, bestScore);
-                            beta = Math.min(beta, score);
-                            if (beta <= alpha) break; // Pruning
-                        }
-                    }
+                move = simpleAIStrategy(); // Simple AI for 4x4 and 5x5
+            }
+
+            if (move) {
+                board[move.i][move.j] = ai;
+                printBoard();
+                if (checkWinner(board, ai)) {
+                    aiScore++;
+                    document.getElementById('status').textContent = 'AI wins!';
+                    document.getElementById('aiScore').textContent = aiScore;
+                    gameOver = true; // Mark the game as over
+                    setTimeout(resetGame, 2000);
+                    return;
                 }
-                return bestScore;
+                if (isBoardFull()) {
+                    document.getElementById('status').textContent = "It's a tie!";
+                    gameOver = true;
+                    setTimeout(resetGame, 2000);
+                }
             }
         }
 
@@ -288,7 +322,7 @@
                 for (let j = 0; j < boardSize; j++) {
                     if (board[i][j] === ' ') {
                         board[i][j] = ai;
-                        let score = minimax(board, 0, false, -Infinity, Infinity); // Alpha-Beta Pruning
+                        let score = minimax(board, 0, false);
                         board[i][j] = ' ';
                         if (score > bestScore) {
                             bestScore = score;
@@ -298,6 +332,41 @@
                 }
             }
             return move;
+        }
+
+        function minimax(b, depth, isMaximizing) {
+            const boardSize = getBoardSize();
+            if (checkWinner(b, ai)) return 1;
+            if (checkWinner(b, player)) return -1;
+            if (isBoardFull()) return 0;
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < boardSize; i++) {
+                    for (let j = 0; j < boardSize; j++) {
+                        if (b[i][j] === ' ') {
+                            b[i][j] = ai;
+                            let score = minimax(b, depth + 1, false);
+                            b[i][j] = ' ';
+                            bestScore = Math.max(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < boardSize; i++) {
+                    for (let j = 0; j < boardSize; j++) {
+                        if (b[i][j] === ' ') {
+                            b[i][j] = player;
+                            let score = minimax(b, depth + 1, true);
+                            b[i][j] = ' ';
+                            bestScore = Math.min(score, bestScore);
+                        }
+                    }
+                }
+                return bestScore;
+            }
         }
 
         function playerMove(i, j) {
@@ -320,28 +389,6 @@
             }
 
             aiMove();
-        }
-
-        function aiMove() {
-            if (gameOver) return; // Prevent AI move after game over
-            let move = bestMove();
-            if (move) {
-                board[move.i][move.j] = ai;
-                printBoard();
-                if (checkWinner(board, ai)) {
-                    aiScore++;
-                    document.getElementById('status').textContent = 'AI wins!';
-                    document.getElementById('aiScore').textContent = aiScore;
-                    gameOver = true; // Mark the game as over
-                    setTimeout(resetGame, 2000);
-                    return;
-                }
-                if (isBoardFull()) {
-                    document.getElementById('status').textContent = "It's a tie!";
-                    gameOver = true;
-                    setTimeout(resetGame, 2000);
-                }
-            }
         }
 
         function resetGame() {
