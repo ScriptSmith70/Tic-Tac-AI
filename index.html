@@ -169,6 +169,7 @@
         let board = [];
         let playerScore = 0;
         let aiScore = 0;
+        let gameOver = false; // Flag to stop further moves after game ends
 
         function getBoardSize() {
             return parseInt(document.getElementById('boardSize').value);
@@ -177,6 +178,7 @@
         function createBoard() {
             const boardSize = getBoardSize();
             board = Array(boardSize).fill().map(() => Array(boardSize).fill(' '));
+            gameOver = false; // Reset game-over flag
 
             const boardElement = document.getElementById('board');
             boardElement.style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
@@ -294,18 +296,20 @@
         }
 
         function playerMove(i, j) {
-            if (board[i][j] !== ' ') return;
+            if (board[i][j] !== ' ' || gameOver) return; // Prevent move after game over
             board[i][j] = player;
             printBoard();
             if (checkWinner(board, player)) {
                 playerScore++;
                 document.getElementById('status').textContent = 'You win!';
                 document.getElementById('playerScore').textContent = playerScore;
+                gameOver = true; // Mark the game as over
                 setTimeout(resetGame, 2000);
                 return;
             }
             if (isBoardFull()) {
                 document.getElementById('status').textContent = "It's a tie!";
+                gameOver = true;
                 setTimeout(resetGame, 2000);
                 return;
             }
@@ -314,6 +318,7 @@
         }
 
         function aiMove() {
+            if (gameOver) return; // Prevent AI move after game over
             let move = bestMove();
             if (move) {
                 board[move.i][move.j] = ai;
@@ -322,11 +327,13 @@
                     aiScore++;
                     document.getElementById('status').textContent = 'AI wins!';
                     document.getElementById('aiScore').textContent = aiScore;
+                    gameOver = true; // Mark the game as over
                     setTimeout(resetGame, 2000);
                     return;
                 }
                 if (isBoardFull()) {
                     document.getElementById('status').textContent = "It's a tie!";
+                    gameOver = true;
                     setTimeout(resetGame, 2000);
                 }
             }
@@ -336,6 +343,7 @@
             createBoard();
             printBoard();
             document.getElementById('status').textContent = 'Your turn!';
+            gameOver = false; // Allow moves again
         }
 
         // Toggle Dark Mode
@@ -350,5 +358,6 @@
 </body>
 
 </html>
+
 
 
